@@ -1,7 +1,7 @@
-From 02dbc54913d8274ecb24239ed016e5b8eedf41cd Mon Sep 17 00:00:00 2001
+From a20ead07b711057d778645392fdda048f83cd321 Mon Sep 17 00:00:00 2001
 From: Laszlo Ersek <lersek@redhat.com>
-Date: Tue, 9 Sep 2014 20:50:23 +0200
-Subject: [PATCH 2/4] add custom Makefile for EfiRom (RHEL only)
+Date: Wed, 21 Oct 2015 11:08:59 +0200
+Subject: add custom Makefile for EfiRom (RHEL only)
 
 Message-id: <1410295825-13989-3-git-send-email-lersek@redhat.com>
 Patchwork-id: 60928
@@ -14,15 +14,10 @@ RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
 The build flags have been captured from the BaseTools build log.
 
 Signed-off-by: Laszlo Ersek <lersek@redhat.com>
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
 ---
  EfiRom/Makefile | 43 +++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 43 insertions(+)
- create mode 100644 EfiRom/Makefile
-
-Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
----
- EfiRom/Makefile |   43 +++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 43 insertions(+), 0 deletions(-)
  create mode 100644 EfiRom/Makefile
 
 diff --git a/EfiRom/Makefile b/EfiRom/Makefile
@@ -75,5 +70,5 @@ index 0000000..30914d9
 +	rm -f EfiRom EfiRom.o CommonLib.o EfiUtilityMsgs.o ParseInf.o \
 + EfiCompress.o
 -- 
-1.7.1
+2.5.0
 

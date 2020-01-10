@@ -9,7 +9,8 @@
 #      e1000: 0x8086 0x100e
 #    rtl8139: 0x10ec 0x8139
 # virtio-net: 0x1af4 0x1000
-%global qemuroms 10222000 10ec8029 8086100e 10ec8139 1af41000
+#     e1000e: 0x8086 0x10d3
+%global qemuroms 10222000 10ec8029 8086100e 10ec8139 1af41000 808610d3
 
 # We only build the ROMs if on an x86 build host. The resulting
 # binary RPM will be noarch, so other archs will still be able
@@ -34,51 +35,43 @@
 #
 # And then change these two:
 
-%global date 20130517
-%global hash c4bce43
+%global date 20160127
+%global hash 6366fa7a
 
 Name:    ipxe
 Version: %{date}
-Release: 8.git%{hash}%{?dist}.1
+Release: 5.git%{hash}%{?dist}
 Summary: A network boot loader
 
 Group:   System Environment/Base
 License: GPLv2 and BSD
 URL:     http://ipxe.org/
 
-Source0: %{name}-%{version}-git%{hash}.tar.gz
+Source0: %{name}-%{hash}.tar.bz2
 Source1: USAGE
-# Remove 2 second startup wait. This patch is not intended to
-# go upstream. Modifying the general config header file is the
-# intended means for downstream customization.
-Patch1: %{name}-banner-timeout.patch
-# GCC >= 4.8 doesn't like the use of 'ebp' in asm
-# https://bugzilla.redhat.com/show_bug.cgi?id=914091
-Patch2: %{name}-asm.patch
-# For bz#1062644 - pxe boot fails if next-server details come from a different dhcp server
-Patch3: ipxe-Use-next-server-from-filename-s-settings-block.patch
-# For bz#1031518 - iPXE does not honor specified boot device
-Patch4: ipxe-Enable-infrastructure-to-specify-an-autoboot-device-.patch
-# For bz#1031518 - iPXE does not honor specified boot device
-Patch5: ipxe-Allow-prefix-to-specify-a-PCI-autoboot-device-locati.patch
-# For bz#1031518 - iPXE does not honor specified boot device
-Patch6: ipxe-Store-boot-bus-dev.fn-address-as-autoboot-device-loc.patch
-# For bz#1031518 - iPXE does not honor specified boot device
-Patch7: ipxe-Ignore-PCI-autoboot-device-location-if-set-to-00-00..patch
-# For bz#857123 - Guests never get an iPXE prompt
-Patch8: ipxe-Revert-Remove-2-second-startup-wait.patch
-# For bz#857123 - Guests never get an iPXE prompt
-Patch9: ipxe-Allow-ROM-banner-timeout-to-be-configured-independen.patch
-# For bz#857123 - Guests never get an iPXE prompt
-Patch10: ipxe-Customize-ROM-banner-timeout.patch
-# For bz#1084561 - RFE: ship UEFI drivers for ipxe in RHEL-7.y
-Patch11: ipxe-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch
-# For bz#1084561 - RFE: ship UEFI drivers for ipxe in RHEL-7.y
-Patch12: ipxe-add-custom-Makefile-for-EfiRom-RHEL-only.patch
-# For bz#1196352 - [RFE] option to increase gpxe retry timeout
-Patch13: ipxe-Extract-timing-parameters-out-to-config-dhcp.h.patch
-# For bz#1196352 - [RFE] option to increase gpxe retry timeout
-Patch14: ipxe-Use-spec-compliant-timeouts.patch
+
+Patch2: 0002-Customize-ROM-banner-timeout.patch
+Patch3: 0003-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch
+Patch4: 0004-add-custom-Makefile-for-EfiRom-RHEL-only.patch
+Patch6: 0006-Use-spec-compliant-timeouts.patch
+# For bz#1350167 - ipxe: enable IPV6
+Patch7: ipxe-Enable-IPv6-protocol-in-non-QEMU-builds.patch
+# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
+Patch8: ipxe-Add-pci_find_next_capability.patch
+# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
+Patch9: ipxe-Add-virtio-1.0-constants-and-data-structures.patch
+# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
+Patch10: ipxe-Add-virtio-1.0-PCI-support.patch
+# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
+Patch11: ipxe-Add-virtio-net-1.0-support.patch
+# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
+Patch12: ipxe-Renumber-virtio_pci_region-flags.patch
+# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
+Patch13: ipxe-Fix-virtio-pci-logging.patch
+# For bz#1322056 - ipxe freeze during HTTP download with last RPM
+Patch14: ipxe-Send-TCP-keepalives-on-idle-established-connections.patch
+# For bz#1316329 - [RFE] Properly Handle 8021.Q VID 0 Frames, as new vlan model in linux kernel does.
+Patch15: ipxe-Strip-802.1Q-VLAN-0-priority-tags.patch
 
 %ifarch %{buildarches}
 BuildRequires: perl
@@ -86,6 +79,7 @@ BuildRequires: syslinux
 BuildRequires: mtools
 BuildRequires: mkisofs
 BuildRequires: binutils-devel
+BuildRequires: xz-devel
 
 Obsoletes: gpxe <= 1.0.1
 
@@ -139,12 +133,14 @@ replacement for proprietary PXE ROMs, with many extra features such as
 DNS, HTTP, iSCSI, etc.
 
 %prep
-%setup -q -n %{name}-%{version}-git%{hash}
-%patch1 -p1
+%setup -q -n %{name}-%{hash}
+cp -a %{SOURCE1} .
+
+patch_command="patch -p1 -s"
+
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
@@ -154,7 +150,7 @@ DNS, HTTP, iSCSI, etc.
 %patch12 -p1
 %patch13 -p1
 %patch14 -p1
-cp -a %{SOURCE1} .
+%patch15 -p1
 
 %build
 %ifarch %{buildarches}
@@ -174,6 +170,9 @@ make bin/undionly.kpxe bin/ipxe.{dsk,iso,usb,lkrn} allroms \
                    ISOLINUX_BIN=${ISOLINUX_BIN} NO_WERROR=1 V=1 \
 		   GITVERSION=%{hash}
 
+make bin-x86_64-efi/ipxe.efi \
+     NO_WERROR=1 V=1 GITVERSION=%{hash}
+
 # build EfiRom
 cd ../EfiRom
 make %{?_smp_mflags}
@@ -181,8 +180,8 @@ cd ../src
 
 # build roms with efi support for qemu
 for rom in %qemuroms; do
-  make NO_WERROR=1 V=1 GITVERSION=%{hash} bin/${rom}.rom
-  make NO_WERROR=1 V=1 GITVERSION=%{hash} bin-x86_64-efi/${rom}.efidrv
+  make NO_WERROR=1 V=1 GITVERSION=%{hash} CONFIG=qemu \
+       bin/${rom}.rom bin-x86_64-efi/${rom}.efidrv
   vid="0x${rom%%????}"
   did="0x${rom#????}"
   ../EfiRom/EfiRom -f "$vid" -i "$did" --pci23 \
@@ -198,10 +197,13 @@ done
 %install
 %ifarch %{buildarches}
 mkdir -p %{buildroot}/%{_datadir}/%{name}/
-pushd src/bin/
 
-cp -a undionly.kpxe ipxe.{iso,usb,dsk,lkrn} %{buildroot}/%{_datadir}/%{name}/
+pushd src
 
+cp -a bin/undionly.kpxe bin/ipxe.{iso,usb,dsk,lkrn} bin-x86_64-efi/ipxe.efi \
+   %{buildroot}/%{_datadir}/%{name}/
+
+cd bin
 for fmt in %{formats};do
  for img in *.${fmt};do
       if [ -e $img ]; then
@@ -231,32 +233,55 @@ done
 %{_datadir}/%{name}/ipxe.usb
 %{_datadir}/%{name}/ipxe.dsk
 %{_datadir}/%{name}/ipxe.lkrn
+%{_datadir}/%{name}/ipxe.efi
 %{_datadir}/%{name}/undionly.kpxe
-%doc COPYING COPYRIGHTS USAGE
+%doc COPYING COPYING.GPLv2 USAGE
 
 %files roms -f rom.list
 %dir %{_datadir}/%{name}
-%doc COPYING COPYRIGHTS
+%doc COPYING COPYING.GPLv2
 
 %files roms-qemu -f qemu.rom.list
 %dir %{_datadir}/%{name}
-%doc COPYING COPYRIGHTS
+%doc COPYING COPYING.GPLv2
 %endif
 
 %changelog
-* Tue Jan 26 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20130517-8.gitc4bce43.el7_2.1
-- Rebuild for preventing conflicts [bz#1301855]
+* Thu Sep 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20160127-5.git6366fa7a.el7
+- ipxe-Strip-802.1Q-VLAN-0-priority-tags.patch [bz#1316329]
+- Resolves: bz#1316329
+  ([RFE] Properly Handle 8021.Q VID 0 Frames, as new vlan model in linux kernel does.)
 
-* Wed May 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 20130517-7.gitc4bce43.el7
-- ipxe-Extract-timing-parameters-out-to-config-dhcp.h.patch [bz#1196352]
-- ipxe-Use-spec-compliant-timeouts.patch [bz#1196352]
-- Resolves: bz#1196352
-  ([RFE] option to increase gpxe retry timeout)
+* Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20160127-4.git6366fa7a.el7
+- ipxe-Send-TCP-keepalives-on-idle-established-connections.patch [bz#1322056]
+- ipxe-enable-e1000e-rom.patch [bz#1361534]
+- Resolves: bz#1322056
+  (ipxe freeze during HTTP download with last RPM)
+- Resolves: bz#1361534
+  (RFE: Integrate e1000e implementation in downstream QEMU)
+
+* Fri Jul 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20160127-3.git6366fa7a.el7
+- ipxe-Add-pci_find_next_capability.patch [bz#1242850]
+- ipxe-Add-virtio-1.0-constants-and-data-structures.patch [bz#1242850]
+- ipxe-Add-virtio-1.0-PCI-support.patch [bz#1242850]
+- ipxe-Add-virtio-net-1.0-support.patch [bz#1242850]
+- ipxe-Renumber-virtio_pci_region-flags.patch [bz#1242850]
+- ipxe-Fix-virtio-pci-logging.patch [bz#1242850]
+- Resolves: bz#1242850
+  (Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci)
+
+* Tue Jul 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20160127-2.git6366fa7a.el7
+- ipxe-Enable-IPv6-protocol-in-non-QEMU-builds.patch [bz#1350167]
+- Resolves: bz#1350167
+  (ipxe: enable IPV6)
+
+* Wed Mar 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20160127-1.git6366fa7a.el7
+- Rebase to 6366fa7a
+- Resolves: bz#1297853
 
 * Mon Sep 15 2014 Miroslav Rezanina <mrezanin@redhat.com> - 20130517-6.gitc4bce43.el7
 - ipxe-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch [bz#1084561]
 - ipxe-add-custom-Makefile-for-EfiRom-RHEL-only.patch [bz#1084561]
-- ipxe-redhat-delete-useless-editor-backup-of-spec.template.patch [bz#1084561]
 - ipxe-redhat-build-and-install-combined-legacy-UEFI-roms-f.patch [bz#1084561]
 - Resolves: bz#1084561
   (RFE: ship UEFI drivers for ipxe in RHEL-7.y)
@@ -279,7 +304,7 @@ done
 - Resolves: bz#1062644
   (pxe boot fails if next-server details come from a different dhcp server)
 
-* Thu Jan 15 2014 Miroslav Rezanina <mrezanin@redhat.com> - 20130517-3.gitc4bce43
+* Wed Jan 15 2014 Miroslav Rezanina <mrezanin@redhat.com> - 20130517-3.gitc4bce43
 - pad ROMs to 256k (rhbz #1038630)
 - Resolves: rhbz# 1038630
 

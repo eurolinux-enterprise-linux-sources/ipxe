@@ -1,0 +1,82 @@
+From 8346d9bc5cfacb19001df7f272d0c86cfd570ca5 Mon Sep 17 00:00:00 2001
+From: Ladi Prosek <lprosek@redhat.com>
+Date: Wed, 13 Jul 2016 13:28:39 +0200
+Subject: [PATCH 6/6] Fix virtio-pci logging
+
+RH-Author: Ladi Prosek <lprosek@redhat.com>
+Message-id: <1468416519-11107-7-git-send-email-lprosek@redhat.com>
+Patchwork-id: 71172
+O-Subject: [RHEL7.3 ipxe PATCH v2 6/6] [virtio] Fix virtio-pci logging
+Bugzilla: 1242850
+RH-Acked-by: Marcel Apfelbaum <marcel@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+
+iPXE debug logging doesn't support %u.  This commit replaces it with
+%d in virtio-pci debug format strings.
+
+Signed-off-by: Ladi Prosek <lprosek@redhat.com>
+Reviewed-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+(cherry picked from commit 040aa980d630e45cb6d9e5fbaf5719b814accd5f)
+Signed-off-by: Ladi Prosek <lprosek@redhat.com>
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/drivers/bus/virtio-pci.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/drivers/bus/virtio-pci.c b/src/drivers/bus/virtio-pci.c
+index 494da28..a5dabc4 100644
+--- a/src/drivers/bus/virtio-pci.c
++++ b/src/drivers/bus/virtio-pci.c
+@@ -252,21 +252,21 @@ int virtio_pci_map_capability(struct pci_device *pci, int cap, size_t minlen,
+                           &length);
+ 
+     if (length <= start) {
+-        DBG("VIRTIO-PCI bad capability len %u (>%u expected)\n", length, start);
++        DBG("VIRTIO-PCI bad capability len %d (>%d expected)\n", length, start);
+         return -EINVAL;
+     }
+     if (length - start < minlen) {
+-        DBG("VIRTIO-PCI bad capability len %u (>=%zu expected)\n", length, minlen);
++        DBG("VIRTIO-PCI bad capability len %d (>=%zd expected)\n", length, minlen);
+         return -EINVAL;
+     }
+     length -= start;
+     if (start + offset < offset) {
+-        DBG("VIRTIO-PCI map wrap-around %u+%u\n", start, offset);
++        DBG("VIRTIO-PCI map wrap-around %d+%d\n", start, offset);
+         return -EINVAL;
+     }
+     offset += start;
+     if (offset & (align - 1)) {
+-        DBG("VIRTIO-PCI offset %u not aligned to %u\n", offset, align);
++        DBG("VIRTIO-PCI offset %d not aligned to %d\n", offset, align);
+         return -EINVAL;
+     }
+     if (length > size) {
+@@ -275,9 +275,9 @@ int virtio_pci_map_capability(struct pci_device *pci, int cap, size_t minlen,
+ 
+     if (minlen + offset < minlen ||
+         minlen + offset > pci_bar_size(pci, PCI_BASE_ADDRESS(bar))) {
+-        DBG("VIRTIO-PCI map virtio %zu@%u out of range on bar %i length %lu\n",
++        DBG("VIRTIO-PCI map virtio %zd@%d out of range on bar %i length %ld\n",
+             minlen, offset,
+-            bar, (unsigned long)pci_bar_size(pci, PCI_BASE_ADDRESS(bar)));
++            bar, pci_bar_size(pci, PCI_BASE_ADDRESS(bar)));
+         return -EINVAL;
+     }
+ 
+@@ -353,7 +353,7 @@ int vpm_find_vqs(struct virtio_pci_modern_device *vdev,
+             return -ENOENT;
+ 
+         if (size & (size - 1)) {
+-            DBG("VIRTIO-PCI %p: bad queue size %u", vdev, size);
++            DBG("VIRTIO-PCI %p: bad queue size %d", vdev, size);
+             return -EINVAL;
+         }
+ 
+-- 
+1.8.3.1
+

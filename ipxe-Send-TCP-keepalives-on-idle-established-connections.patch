@@ -1,0 +1,162 @@
+From 506552bef7f9813d1cf6722ce25d2d46aa79b92f Mon Sep 17 00:00:00 2001
+From: Ladi Prosek <lprosek@redhat.com>
+Date: Wed, 13 Jul 2016 11:42:16 +0200
+Subject: [PATCH 1/2] Send TCP keepalives on idle established connections
+
+RH-Author: Ladi Prosek <lprosek@redhat.com>
+Message-id: <1468410136-5607-1-git-send-email-lprosek@redhat.com>
+Patchwork-id: 71165
+O-Subject: [RHEL7.3 ipxe PATCH] [tcp] Send TCP keepalives on idle established connections
+Bugzilla: 1322056
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+
+From: Michael Brown <mcb30@ipxe.org>
+
+In some circumstances, intermediate devices may lose state in a way
+that temporarily prevents the successful delivery of packets from a
+TCP peer.  For example, a firewall may drop a NAT forwarding table
+entry.
+
+Since iPXE spends most of its time downloading files (and hence purely
+receiving data, sending only TCP ACKs), this can easily happen in a
+situation in which there is no reason for iPXE's TCP stack to generate
+any retransmissions.  The temporary loss of connectivity can therefore
+effectively become permanent.
+
+Work around this problem by sending TCP keepalives after a period of
+inactivity on an established connection.
+
+TCP keepalives usually send a single garbage byte in sequence number
+space that has already been ACKed by the peer.  Since we do not need
+to elicit a response from the peer, we instead send pure ACKs (with no
+garbage data) in order to keep the transmit code path simple.
+
+Originally-implemented-by: Ladi Prosek <lprosek@redhat.com>
+Debugged-by: Ladi Prosek <lprosek@redhat.com>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+(cherry picked from commit 188789eb3cb83496bd48847da59c74e3f06d413e)
+Signed-off-by: Ladi Prosek <lprosek@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=1322056
+Brew: https://brewweb.engineering.redhat.com/brew/taskinfo?taskID=11343040
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/include/ipxe/tcp.h |  8 ++++++++
+ src/net/tcp.c          | 38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+diff --git a/src/include/ipxe/tcp.h b/src/include/ipxe/tcp.h
+index 063ebaa..faf4154 100644
+--- a/src/include/ipxe/tcp.h
++++ b/src/include/ipxe/tcp.h
+@@ -381,6 +381,14 @@ struct tcp_options {
+ #define TCP_MSL ( 2 * 60 * TICKS_PER_SEC )
+ 
+ /**
++ * TCP keepalive period
++ *
++ * We send keepalive ACKs after this period of inactivity has elapsed
++ * on an established connection.
++ */
++#define TCP_KEEPALIVE_DELAY ( 15 * TICKS_PER_SEC )
++
++/**
+  * TCP maximum header length
+  *
+  */
+diff --git a/src/net/tcp.c b/src/net/tcp.c
+index c69c83b..77a7d8e 100644
+--- a/src/net/tcp.c
++++ b/src/net/tcp.c
+@@ -113,6 +113,8 @@ struct tcp_connection {
+ 	struct process process;
+ 	/** Retransmission timer */
+ 	struct retry_timer timer;
++	/** Keepalive timer */
++	struct retry_timer keepalive;
+ 	/** Shutdown (TIME_WAIT) timer */
+ 	struct retry_timer wait;
+ 
+@@ -177,6 +179,7 @@ static struct profiler tcp_xfer_profiler __profiler = { .name = "tcp.xfer" };
+ static struct process_descriptor tcp_process_desc;
+ static struct interface_descriptor tcp_xfer_desc;
+ static void tcp_expired ( struct retry_timer *timer, int over );
++static void tcp_keepalive_expired ( struct retry_timer *timer, int over );
+ static void tcp_wait_expired ( struct retry_timer *timer, int over );
+ static struct tcp_connection * tcp_demux ( unsigned int local_port );
+ static int tcp_rx_ack ( struct tcp_connection *tcp, uint32_t ack,
+@@ -284,6 +287,7 @@ static int tcp_open ( struct interface *xfer, struct sockaddr *peer,
+ 	intf_init ( &tcp->xfer, &tcp_xfer_desc, &tcp->refcnt );
+ 	process_init_stopped ( &tcp->process, &tcp_process_desc, &tcp->refcnt );
+ 	timer_init ( &tcp->timer, tcp_expired, &tcp->refcnt );
++	timer_init ( &tcp->keepalive, tcp_keepalive_expired, &tcp->refcnt );
+ 	timer_init ( &tcp->wait, tcp_wait_expired, &tcp->refcnt );
+ 	tcp->prev_tcp_state = TCP_CLOSED;
+ 	tcp->tcp_state = TCP_STATE_SENT ( TCP_SYN );
+@@ -380,6 +384,7 @@ static void tcp_close ( struct tcp_connection *tcp, int rc ) {
+ 		/* Remove from list and drop reference */
+ 		process_del ( &tcp->process );
+ 		stop_timer ( &tcp->timer );
++		stop_timer ( &tcp->keepalive );
+ 		stop_timer ( &tcp->wait );
+ 		list_del ( &tcp->list );
+ 		ref_put ( &tcp->refcnt );
+@@ -394,6 +399,9 @@ static void tcp_close ( struct tcp_connection *tcp, int rc ) {
+ 	if ( ! ( tcp->tcp_state & TCP_STATE_ACKED ( TCP_SYN ) ) )
+ 		tcp_rx_ack ( tcp, ( tcp->snd_seq + 1 ), 0 );
+ 
++	/* Stop keepalive timer */
++	stop_timer ( &tcp->keepalive );
++
+ 	/* If we have no data remaining to send, start sending FIN */
+ 	if ( list_empty ( &tcp->tx_queue ) &&
+ 	     ! ( tcp->tcp_state & TCP_STATE_SENT ( TCP_FIN ) ) ) {
+@@ -802,6 +810,32 @@ static void tcp_expired ( struct retry_timer *timer, int over ) {
+ }
+ 
+ /**
++ * Keepalive timer expired
++ *
++ * @v timer		Keepalive timer
++ * @v over		Failure indicator
++ */
++static void tcp_keepalive_expired ( struct retry_timer *timer,
++				    int over __unused ) {
++	struct tcp_connection *tcp =
++		container_of ( timer, struct tcp_connection, keepalive );
++
++	DBGC ( tcp, "TCP %p sending keepalive\n", tcp );
++
++	/* Reset keepalive timer */
++	start_timer_fixed ( &tcp->keepalive, TCP_KEEPALIVE_DELAY );
++
++	/* Send keepalive.  We do this only to preserve or restore
++	 * state in intermediate devices (e.g. firewall NAT tables);
++	 * we don't actually care about eliciting a response to verify
++	 * that the peer is still alive.  We therefore send just a
++	 * pure ACK, to keep our transmit path simple.
++	 */
++	tcp->flags |= TCP_ACK_PENDING;
++	tcp_xmit ( tcp );
++}
++
++/**
+  * Shutdown timer expired
+  *
+  * @v timer		Shutdown timer
+@@ -1063,6 +1097,10 @@ static int tcp_rx_ack ( struct tcp_connection *tcp, uint32_t ack,
+ 	/* Update window size */
+ 	tcp->snd_win = win;
+ 
++	/* Hold off (or start) the keepalive timer, if applicable */
++	if ( ! ( tcp->tcp_state & TCP_STATE_SENT ( TCP_FIN ) ) )
++		start_timer_fixed ( &tcp->keepalive, TCP_KEEPALIVE_DELAY );
++
+ 	/* Ignore ACKs that don't actually acknowledge any new data.
+ 	 * (In particular, do not stop the retransmission timer; this
+ 	 * avoids creating a sorceror's apprentice syndrome when a
+-- 
+1.8.3.1
+

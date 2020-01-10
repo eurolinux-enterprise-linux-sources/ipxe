@@ -1,0 +1,53 @@
+From 35f4006845436816a651b2f154a37d38d02305d9 Mon Sep 17 00:00:00 2001
+From: Ladi Prosek <lprosek@redhat.com>
+Date: Tue, 28 Jun 2016 14:23:19 +0200
+Subject: [PATCH] Enable IPv6 protocol in non-QEMU builds
+
+RH-Author: Ladi Prosek <lprosek@redhat.com>
+Message-id: <1467123799-26467-1-git-send-email-lprosek@redhat.com>
+Patchwork-id: 70822
+O-Subject: [RHEL7.3 ipxe PATCH v2] Enable IPv6 protocol in non-QEMU builds
+Bugzilla: 1350167
+RH-Acked-by: Lucas Alvares Gomes <lgomes@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Neil Horman <nhorman@redhat.com>
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+
+Enables IPv6 in ipxe-bootimgs and ipxe-roms while keeping the
+QEMU package ipxe-roms-qemu unaffected. This change depends on
+the include order specified in upstream commit c801cb29d647.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=1350167
+Brew: https://brewweb.engineering.redhat.com/brew/taskinfo?taskID=11281457
+
+Signed-off-by: Ladi Prosek <lprosek@redhat.com>
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/config/local/general.h      | 3 +++
+ src/config/local/qemu/general.h | 3 +++
+ 2 files changed, 6 insertions(+)
+ create mode 100644 src/config/local/qemu/general.h
+
+diff --git a/src/config/local/general.h b/src/config/local/general.h
+index 5814511..47d0e1a 100644
+--- a/src/config/local/general.h
++++ b/src/config/local/general.h
+@@ -1,3 +1,6 @@
+ #undef ROM_BANNER_TIMEOUT
+ #define ROM_BANNER_TIMEOUT     0
+ 
++/* Enable IPv6. Note that we leave this defined only in non-QEMU builds.
++ * Find the corresponding undef in src/config/local/qemu/general.h */
++#define NET_PROTO_IPV6
+diff --git a/src/config/local/qemu/general.h b/src/config/local/qemu/general.h
+new file mode 100644
+index 0000000..ef7b5e4
+--- /dev/null
++++ b/src/config/local/qemu/general.h
+@@ -0,0 +1,3 @@
++/* IPv6 is enabled only in non-QEMU builds. Find the corresponding define
++ * in src/config/local/general.h */
++#undef NET_PROTO_IPV6
+-- 
+1.8.3.1
+

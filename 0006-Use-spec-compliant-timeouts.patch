@@ -1,7 +1,7 @@
-From b86874e0fa472f0d2e70babb5c37443cc37762b7 Mon Sep 17 00:00:00 2001
+From 7038f41c0131d263de5165b416500009acdbf550 Mon Sep 17 00:00:00 2001
 From: Alex Williamson <alex.williamson@redhat.com>
-Date: Tue, 28 Apr 2015 21:24:03 +0200
-Subject: [PATCH 2/2] Use spec compliant timeouts
+Date: Wed, 21 Oct 2015 11:18:40 +0200
+Subject: Use spec compliant timeouts
 
 Message-id: <20150428212403.31299.29391.stgit@gimli.home>
 Patchwork-id: 64951
@@ -24,13 +24,6 @@ Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
  delete mode 100644 src/config/local/.gitignore
  create mode 100644 src/config/local/dhcp.h
 
-diff --git a/src/config/local/.gitignore b/src/config/local/.gitignore
-deleted file mode 100644
-index 72e8ffc..0000000
---- a/src/config/local/.gitignore
-+++ /dev/null
-@@ -1 +0,0 @@
--*
 diff --git a/src/config/local/dhcp.h b/src/config/local/dhcp.h
 new file mode 100644
 index 0000000..83df5b8
@@ -100,5 +93,5 @@ index 0000000..83df5b8
 +#undef PXEBS_MAX_TIMEOUT_SEC
 +#define PXEBS_MAX_TIMEOUT_SEC               5
 -- 
-1.8.3.1
+2.5.0
 

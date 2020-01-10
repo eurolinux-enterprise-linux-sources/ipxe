@@ -1,7 +1,7 @@
-From 0884fdba4e127fa1870e6b7cdde13d78d288529f Mon Sep 17 00:00:00 2001
+From 781fa846a6b51b80fb08afe8ac2b8e862006082f Mon Sep 17 00:00:00 2001
 From: Laszlo Ersek <lersek@redhat.com>
-Date: Tue, 9 Sep 2014 20:50:22 +0200
-Subject: [PATCH 1/4] import EfiRom from edk2 BaseTools (RHEL only)
+Date: Wed, 21 Oct 2015 11:07:05 +0200
+Subject: import EfiRom from edk2 BaseTools (RHEL only)
 
 Message-id: <1410295825-13989-2-git-send-email-lersek@redhat.com>
 Patchwork-id: 60927
@@ -20,51 +20,6 @@ BaseTools) are 2-clause BSD.
 
 Suggested-by: Paolo Bonzini <pbonzini@redhat.com>
 Signed-off-by: Laszlo Ersek <lersek@redhat.com>
----
- EfiRom/Common/CommonLib.h                 |  194 ++++
- EfiRom/Common/Compress.h                  |   88 ++
- EfiRom/Common/EfiUtilityMsgs.h            |  170 +++
- EfiRom/Common/MemoryFile.h                |  111 ++
- EfiRom/Common/ParseInf.h                  |  226 ++++
- EfiRom/EfiRom.h                           |  357 +++++++
- EfiRom/Include/Common/BaseTypes.h         |  286 ++++++
- EfiRom/Include/Common/BuildVersion.h      |   15 +
- EfiRom/Include/Common/UefiBaseTypes.h     |  175 ++++
- EfiRom/Include/IndustryStandard/EfiPci.h  |   57 ++
- EfiRom/Include/IndustryStandard/PeImage.h |  769 ++++++++++++++
- EfiRom/Include/IndustryStandard/pci22.h   |  542 ++++++++++
- EfiRom/Include/IndustryStandard/pci23.h   |   24 +
- EfiRom/Include/IndustryStandard/pci30.h   |   44 +
- EfiRom/Include/X64/ProcessorBind.h        |  194 ++++
- EfiRom/Common/CommonLib.c                 |  711 +++++++++++++
- EfiRom/Common/EfiCompress.c               | 1590 +++++++++++++++++++++++++++++
- EfiRom/Common/EfiUtilityMsgs.c            |  906 ++++++++++++++++
- EfiRom/Common/ParseInf.c                  |  701 +++++++++++++
- EfiRom/EfiRom.c                           | 1564 ++++++++++++++++++++++++++++
- EfiRom/License.txt                        |   25 +
- 21 files changed, 8749 insertions(+)
- create mode 100644 EfiRom/Common/CommonLib.h
- create mode 100644 EfiRom/Common/Compress.h
- create mode 100644 EfiRom/Common/EfiUtilityMsgs.h
- create mode 100644 EfiRom/Common/MemoryFile.h
- create mode 100644 EfiRom/Common/ParseInf.h
- create mode 100644 EfiRom/EfiRom.h
- create mode 100644 EfiRom/Include/Common/BaseTypes.h
- create mode 100644 EfiRom/Include/Common/BuildVersion.h
- create mode 100644 EfiRom/Include/Common/UefiBaseTypes.h
- create mode 100644 EfiRom/Include/IndustryStandard/EfiPci.h
- create mode 100644 EfiRom/Include/IndustryStandard/PeImage.h
- create mode 100644 EfiRom/Include/IndustryStandard/pci22.h
- create mode 100644 EfiRom/Include/IndustryStandard/pci23.h
- create mode 100644 EfiRom/Include/IndustryStandard/pci30.h
- create mode 100644 EfiRom/Include/X64/ProcessorBind.h
- create mode 100644 EfiRom/Common/CommonLib.c
- create mode 100644 EfiRom/Common/EfiCompress.c
- create mode 100644 EfiRom/Common/EfiUtilityMsgs.c
- create mode 100644 EfiRom/Common/ParseInf.c
- create mode 100644 EfiRom/EfiRom.c
- create mode 100644 EfiRom/License.txt
-
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
 ---
  EfiRom/Common/CommonLib.c                 |  711 +++++++++++++
@@ -81,14 +36,14 @@ Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
  EfiRom/Include/Common/BaseTypes.h         |  286 ++++++
  EfiRom/Include/Common/BuildVersion.h      |   15 +
  EfiRom/Include/Common/UefiBaseTypes.h     |  175 ++++
- EfiRom/Include/IndustryStandard/EfiPci.h  |   57 +
+ EfiRom/Include/IndustryStandard/EfiPci.h  |   57 ++
  EfiRom/Include/IndustryStandard/PeImage.h |  769 ++++++++++++++
  EfiRom/Include/IndustryStandard/pci22.h   |  542 ++++++++++
  EfiRom/Include/IndustryStandard/pci23.h   |   24 +
  EfiRom/Include/IndustryStandard/pci30.h   |   44 +
  EfiRom/Include/X64/ProcessorBind.h        |  194 ++++
  EfiRom/License.txt                        |   25 +
- 21 files changed, 8749 insertions(+), 0 deletions(-)
+ 21 files changed, 8749 insertions(+)
  create mode 100644 EfiRom/Common/CommonLib.c
  create mode 100644 EfiRom/Common/CommonLib.h
  create mode 100644 EfiRom/Common/Compress.h
@@ -8987,5 +8942,5 @@ index 0000000..5f530a6
 +ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 +POSSIBILITY OF SUCH DAMAGE.
 -- 
-1.7.1
+2.5.0
 
