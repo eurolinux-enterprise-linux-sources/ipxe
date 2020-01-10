@@ -40,7 +40,7 @@
 
 Name:    ipxe
 Version: %{date}
-Release: 1.git%{hash}%{?dist}
+Release: 1.git%{hash}%{?dist}.1
 Summary: A network boot loader
 
 Group:   System Environment/Base
@@ -56,6 +56,8 @@ Patch3: 0003-add-custom-Makefile-for-EfiRom-RHEL-only.patch
 Patch4: 0005-Use-spec-compliant-timeouts.patch
 Patch5: 0008-Enable-IPv6-protocol-in-non-QEMU-builds.patch
 Patch6: 0009-Strip-802.1Q-VLAN-0-priority-tags.patch
+# For bz#1481180 - iommu platform support for ipxe [rhel-7.4.z]
+Patch7: ipxe-Support-VIRTIO_NET_F_IOMMU_PLATFORM.patch
 
 %ifarch %{buildarches}
 BuildRequires: perl
@@ -128,6 +130,7 @@ patch_command="patch -p1 -s"
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%patch7 -p1
 
 %build
 %ifarch %{buildarches}
@@ -224,6 +227,11 @@ done
 %endif
 
 %changelog
+* Thu Aug 17 2017 Miroslav Rezanina <mrezanin@redhat.com> - 20170123-1.git4e85b27.el7_4.1
+- ipxe-Support-VIRTIO_NET_F_IOMMU_PLATFORM.patch [bz#1481180]
+- Resolves: bz#1481180
+  (iommu platform support for ipxe [rhel-7.4.z])
+
 * Fri Mar 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 20170123-1.git4e85b27.el7
 - Rebase to commit 4e85b27 [bz#1413781]
 - Resolves: bz#1413781

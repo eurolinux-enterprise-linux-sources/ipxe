@@ -1,0 +1,61 @@
+From 615cbcc0d0ebf1509aa15bfc4468aabae3e93626 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Tue, 18 Jul 2017 09:05:06 +0200
+Subject: [PATCH] Support VIRTIO_NET_F_IOMMU_PLATFORM
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <1500368706-1228-1-git-send-email-jasowang@redhat.com>
+Patchwork-id: 75798
+O-Subject: [RHEL7.4z ipxe PATCH] [virtio] Support VIRTIO_NET_F_IOMMU_PLATFORM
+Bugzilla: 1481180
+RH-Acked-by: wexu@redhat.com
+RH-Acked-by: Jens Freimann <jfreimann@redhat.com>
+RH-Acked-by: Maxime Coquelin <maxime.coquelin@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 1467887
+Test status: Tested by my self
+Brew Build: https://brewweb.engineering.redhat.com/brew/taskinfo?taskID=13674196
+
+Since we don't enable IOMMU at all, we can then simply enable the
+IOMMU support by claiming the support of VIRITO_F_IOMMU_PLATFORM.
+This fixes booting failure when iommu_platform is set from qemu cli.
+
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+(cherry picked from commit 6a258d8d5523c9b529ae2607d7f49e48eea8beeb)
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/drivers/net/virtio-net.c   | 3 ++-
+ src/include/ipxe/virtio-ring.h | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/drivers/net/virtio-net.c b/src/drivers/net/virtio-net.c
+index 4151532..fe79a92 100644
+--- a/src/drivers/net/virtio-net.c
++++ b/src/drivers/net/virtio-net.c
+@@ -259,7 +259,8 @@ static int virtnet_open_modern ( struct net_device *netdev ) {
+ 		( 1ULL << VIRTIO_NET_F_MAC ) |
+ 		( 1ULL << VIRTIO_NET_F_MTU ) |
+ 		( 1ULL << VIRTIO_F_VERSION_1 ) |
+-		( 1ULL << VIRTIO_F_ANY_LAYOUT ) ) );
++		( 1ULL << VIRTIO_F_ANY_LAYOUT ) |
++		( 1ULL << VIRTIO_F_IOMMU_PLATFORM ) ) );
+ 	vpm_add_status ( &virtnet->vdev, VIRTIO_CONFIG_S_FEATURES_OK );
+ 
+ 	status = vpm_get_status ( &virtnet->vdev );
+diff --git a/src/include/ipxe/virtio-ring.h b/src/include/ipxe/virtio-ring.h
+index e608e62..852769f 100644
+--- a/src/include/ipxe/virtio-ring.h
++++ b/src/include/ipxe/virtio-ring.h
+@@ -20,6 +20,7 @@
+ #define VIRTIO_F_ANY_LAYOUT             27
+ /* v1.0 compliant. */
+ #define VIRTIO_F_VERSION_1              32
++#define VIRTIO_F_IOMMU_PLATFORM         33
+ 
+ #define MAX_QUEUE_NUM      (256)
+ 
+-- 
+1.8.3.1
+
