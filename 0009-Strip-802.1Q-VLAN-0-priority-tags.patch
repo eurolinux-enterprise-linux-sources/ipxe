@@ -1,4 +1,4 @@
-From 1a921ececb22bbc41d1fda34576564e84d124a83 Mon Sep 17 00:00:00 2001
+From 2f542b36b149b32325f85ce89a6823ff97a6d675 Mon Sep 17 00:00:00 2001
 From: Ladi Prosek <lprosek@redhat.com>
 Date: Mon, 11 Jul 2016 14:17:36 +0200
 Subject: Strip 802.1Q VLAN 0 priority tags
@@ -53,10 +53,10 @@ index 2eb6817..2ea1451 100644
  		switch ( net_proto ) {
  		case htons ( ETH_P_IP ):
 diff --git a/src/include/ipxe/netdevice.h b/src/include/ipxe/netdevice.h
-index a1d207f..cea87f7 100644
+index d498ab6..27dda45 100644
 --- a/src/include/ipxe/netdevice.h
 +++ b/src/include/ipxe/netdevice.h
-@@ -719,6 +719,8 @@ extern int net_tx ( struct io_buffer *iobuf, struct net_device *netdev,
+@@ -726,6 +726,8 @@ extern int net_tx ( struct io_buffer *iobuf, struct net_device *netdev,
  extern int net_rx ( struct io_buffer *iobuf, struct net_device *netdev,
  		    uint16_t net_proto, const void *ll_dest,
  		    const void *ll_source, unsigned int flags );
@@ -66,10 +66,10 @@ index a1d207f..cea87f7 100644
  extern struct net_device_configurator *
  find_netdev_configurator ( const char *name );
 diff --git a/src/interface/efi/efi_snp.c b/src/interface/efi/efi_snp.c
-index e6388bf..d1a1a44 100644
+index 9c1b14d..6b974d4 100644
 --- a/src/interface/efi/efi_snp.c
 +++ b/src/interface/efi/efi_snp.c
-@@ -745,6 +745,13 @@ efi_snp_receive ( EFI_SIMPLE_NETWORK_PROTOCOL *snp,
+@@ -813,6 +813,13 @@ efi_snp_receive ( EFI_SIMPLE_NETWORK_PROTOCOL *snp,
  		goto out_bad_ll_header;
  	}
  
@@ -84,10 +84,10 @@ index e6388bf..d1a1a44 100644
  	if ( ll_header_len )
  		*ll_header_len = ll_protocol->ll_header_len;
 diff --git a/src/net/netdevice.c b/src/net/netdevice.c
-index 9df2119..c53d5e3 100644
+index 71a37ec..fdf541b 100644
 --- a/src/net/netdevice.c
 +++ b/src/net/netdevice.c
-@@ -1028,6 +1028,44 @@ int net_rx ( struct io_buffer *iobuf, struct net_device *netdev,
+@@ -1044,6 +1044,44 @@ int net_rx ( struct io_buffer *iobuf, struct net_device *netdev,
  }
  
  /**
@@ -132,7 +132,7 @@ index 9df2119..c53d5e3 100644
   * Poll the network stack
   *
   * This polls all interfaces for received packets, and processes
-@@ -1078,6 +1116,12 @@ void net_poll ( void ) {
+@@ -1094,6 +1132,12 @@ void net_poll ( void ) {
  				continue;
  			}
  

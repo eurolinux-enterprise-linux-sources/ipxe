@@ -1,4 +1,4 @@
-From d596880050a6009629af799243e09f337bcb944a Mon Sep 17 00:00:00 2001
+From 8b74bd14f38ed4defcdea3ef4a15869aa909a02e Mon Sep 17 00:00:00 2001
 From: Laszlo Ersek <lersek@redhat.com>
 Date: Wed, 21 Oct 2015 11:07:05 +0200
 Subject: import EfiRom from edk2 BaseTools (RHEL only)

@@ -1,4 +1,4 @@
-From bc252caa54fcfb2e9fd0ddb01ebaa50192e85c38 Mon Sep 17 00:00:00 2001
+From c3c4dcf208faeb694df7474743dd785f159d30f6 Mon Sep 17 00:00:00 2001
 From: Alex Williamson <alex.williamson@redhat.com>
 Date: Wed, 21 Oct 2015 11:18:40 +0200
 Subject: Use spec compliant timeouts

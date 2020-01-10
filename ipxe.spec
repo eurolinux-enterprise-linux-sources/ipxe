@@ -35,12 +35,12 @@
 #
 # And then change these two:
 
-%global date 20170123
-%global hash 4e85b27
+%global date 20180825
+%global hash 133f4c
 
 Name:    ipxe
 Version: %{date}
-Release: 1.git%{hash}%{?dist}.1
+Release: 2.git%{hash}%{?dist}
 Summary: A network boot loader
 
 Group:   System Environment/Base
@@ -50,14 +50,13 @@ URL:     http://ipxe.org/
 Source0: %{name}-%{date}-git%{hash}.tar.gz
 Source1: USAGE
 
-Patch1: 0001-Add-redhat-directory.patch
-Patch2: 0002-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch
-Patch3: 0003-add-custom-Makefile-for-EfiRom-RHEL-only.patch
-Patch4: 0005-Use-spec-compliant-timeouts.patch
-Patch5: 0008-Enable-IPv6-protocol-in-non-QEMU-builds.patch
-Patch6: 0009-Strip-802.1Q-VLAN-0-priority-tags.patch
-# For bz#1481180 - iommu platform support for ipxe [rhel-7.4.z]
-Patch7: ipxe-Support-VIRTIO_NET_F_IOMMU_PLATFORM.patch
+Patch0001: 0001-Add-redhat-directory.patch
+Patch0002: 0002-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch
+Patch0003: 0003-add-custom-Makefile-for-EfiRom-RHEL-only.patch
+Patch0005: 0005-Use-spec-compliant-timeouts.patch
+Patch0008: 0008-Enable-IPv6-protocol-in-non-QEMU-builds.patch
+Patch0009: 0009-Strip-802.1Q-VLAN-0-priority-tags.patch
+Patch0010: ipxe-vlan-cmds.patch
 
 %ifarch %{buildarches}
 BuildRequires: perl
@@ -124,13 +123,13 @@ cp -a %{SOURCE1} .
 
 patch_command="patch -p1 -s"
 
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
+%patch0001 -p1
+%patch0002 -p1
+%patch0003 -p1
+%patch0005 -p1
+%patch0008 -p1
+%patch0009 -p1
+%patch0010 -p1
 
 %build
 %ifarch %{buildarches}
@@ -227,10 +226,18 @@ done
 %endif
 
 %changelog
-* Thu Aug 17 2017 Miroslav Rezanina <mrezanin@redhat.com> - 20170123-1.git4e85b27.el7_4.1
-- ipxe-Support-VIRTIO_NET_F_IOMMU_PLATFORM.patch [bz#1481180]
-- Resolves: bz#1481180
-  (iommu platform support for ipxe [rhel-7.4.z])
+* Mon Jan 14 2019 Neil Horman <nhorman@redhat.com> - 20180825-2.git133f4c.el7
+- Enable vcreate and vdestroy commands (1583231)
+
+* Mon Dec 17 2018 Miroslav Rezanina <mrezanin@redhat.com> - 20180825-1.git133f4c.el7
+- Rebase to newer upstream [bz#1597210]
+- Resolves: bz#1597210
+  (Rebase ipxe to latest upstream)
+
+* Thu Aug 17 2017 Miroslav Rezanina <mrezanin@redhat.com> - 20170123-2.git4e85b27.el7
+- ipxe-Support-VIRTIO_NET_F_IOMMU_PLATFORM.patch [bz#1467887]
+- Resolves: bz#1467887
+  (iommu platform support for ipxe)
 
 * Fri Mar 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 20170123-1.git4e85b27.el7
 - Rebase to commit 4e85b27 [bz#1413781]

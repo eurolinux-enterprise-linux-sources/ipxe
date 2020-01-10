@@ -1,4 +1,4 @@
-From ed29bb447c66b611172d682ef32688f7597aacf7 Mon Sep 17 00:00:00 2001
+From ebdaa4f4f00c71cc200861fac96066a1e38dd7f1 Mon Sep 17 00:00:00 2001
 From: Ladi Prosek <lprosek@redhat.com>
 Date: Tue, 28 Jun 2016 14:23:19 +0200
 Subject: Enable IPv6 protocol in non-QEMU builds

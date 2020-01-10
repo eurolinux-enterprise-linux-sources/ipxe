@@ -1,4 +1,4 @@
-From 0a3c58a092024de34fce41b5c99e3c0ab756ece9 Mon Sep 17 00:00:00 2001
+From 3e446e7832cd4f66b352d25092a5dccaa78bd122 Mon Sep 17 00:00:00 2001
 From: Laszlo Ersek <lersek@redhat.com>
 Date: Wed, 21 Oct 2015 11:08:59 +0200
 Subject: add custom Makefile for EfiRom (RHEL only)

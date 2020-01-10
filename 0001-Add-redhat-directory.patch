@@ -1,4 +1,4 @@
-From 8b3ac2eeb4538f015be22367a9e692cf9be995cd Mon Sep 17 00:00:00 2001
+From b75b2bfd6d8e7e4a8d8dc6910089209082fe5747 Mon Sep 17 00:00:00 2001
 From: Miroslav Rezanina <mrezanin@redhat.com>
 Date: Wed, 21 Oct 2015 09:40:25 +0200
 Subject: Add redhat directory
@@ -12,19 +12,19 @@ Merged patches (20170123):
  redhat/Makefile                    |  71 ++++++++
  redhat/Makefile.common             |  35 ++++
  redhat/USAGE                       |  16 ++
- redhat/ipxe.spec.template          | 337 +++++++++++++++++++++++++++++++++++++
+ redhat/ipxe.spec.template          | 347 +++++++++++++++++++++++++++++++++++++
  redhat/rpmbuild/BUILD/.gitignore   |   1 +
  redhat/rpmbuild/RPMS/.gitignore    |   1 +
  redhat/rpmbuild/SOURCES/.gitignore |   1 +
  redhat/rpmbuild/SPECS/.gitignore   |   1 +
  redhat/rpmbuild/SRPMS/.gitignore   |   1 +
  redhat/scripts/frh.py              |  27 +++
- redhat/scripts/git-backport-diff   | 302 +++++++++++++++++++++++++++++++++
+ redhat/scripts/git-backport-diff   | 327 ++++++++++++++++++++++++++++++++++
  redhat/scripts/git-compile-check   | 215 +++++++++++++++++++++++
- redhat/scripts/process-patches.sh  |  77 +++++++++
+ redhat/scripts/process-patches.sh  |  77 ++++++++
  redhat/scripts/tarball_checksum.sh |   3 +
  src/config/local/general.h         |   3 +
- 17 files changed, 1101 insertions(+)
+ 17 files changed, 1136 insertions(+)
  create mode 100644 .gitpublish
  create mode 100644 redhat/.gitignore
  create mode 100644 redhat/Makefile
