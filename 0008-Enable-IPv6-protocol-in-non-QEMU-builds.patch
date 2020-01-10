@@ -1,7 +1,7 @@
-From 35f4006845436816a651b2f154a37d38d02305d9 Mon Sep 17 00:00:00 2001
+From ed29bb447c66b611172d682ef32688f7597aacf7 Mon Sep 17 00:00:00 2001
 From: Ladi Prosek <lprosek@redhat.com>
 Date: Tue, 28 Jun 2016 14:23:19 +0200
-Subject: [PATCH] Enable IPv6 protocol in non-QEMU builds
+Subject: Enable IPv6 protocol in non-QEMU builds
 
 RH-Author: Ladi Prosek <lprosek@redhat.com>
 Message-id: <1467123799-26467-1-git-send-email-lprosek@redhat.com>
@@ -22,6 +22,7 @@ Brew: https://brewweb.engineering.redhat.com/brew/taskinfo?taskID=11281457
 
 Signed-off-by: Ladi Prosek <lprosek@redhat.com>
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+(cherry picked from commit 35f4006845436816a651b2f154a37d38d02305d9)
 ---
  src/config/local/general.h      | 3 +++
  src/config/local/qemu/general.h | 3 +++

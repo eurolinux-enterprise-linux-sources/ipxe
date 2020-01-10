@@ -1,4 +1,4 @@
-From 781fa846a6b51b80fb08afe8ac2b8e862006082f Mon Sep 17 00:00:00 2001
+From d596880050a6009629af799243e09f337bcb944a Mon Sep 17 00:00:00 2001
 From: Laszlo Ersek <lersek@redhat.com>
 Date: Wed, 21 Oct 2015 11:07:05 +0200
 Subject: import EfiRom from edk2 BaseTools (RHEL only)
@@ -21,6 +21,7 @@ BaseTools) are 2-clause BSD.
 Suggested-by: Paolo Bonzini <pbonzini@redhat.com>
 Signed-off-by: Laszlo Ersek <lersek@redhat.com>
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+(cherry picked from commit 781fa846a6b51b80fb08afe8ac2b8e862006082f)
 ---
  EfiRom/Common/CommonLib.c                 |  711 +++++++++++++
  EfiRom/Common/CommonLib.h                 |  194 ++++
@@ -8942,5 +8943,5 @@ index 0000000..5f530a6
 +ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 +POSSIBILITY OF SUCH DAMAGE.
 -- 
-2.5.0
+1.8.3.1
 

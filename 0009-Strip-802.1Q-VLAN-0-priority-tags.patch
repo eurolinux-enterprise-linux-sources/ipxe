@@ -1,7 +1,7 @@
-From cd670f3a4f12b35e71802b2c2d57430a5fa624e3 Mon Sep 17 00:00:00 2001
+From 1a921ececb22bbc41d1fda34576564e84d124a83 Mon Sep 17 00:00:00 2001
 From: Ladi Prosek <lprosek@redhat.com>
 Date: Mon, 11 Jul 2016 14:17:36 +0200
-Subject: [PATCH] Strip 802.1Q VLAN 0 priority tags
+Subject: Strip 802.1Q VLAN 0 priority tags
 
 RH-Author: Ladi Prosek <lprosek@redhat.com>
 Message-id: <1468246656-15560-1-git-send-email-lprosek@redhat.com>
@@ -29,16 +29,16 @@ commit f468f12b1eca.
 Signed-off-by: Ladi Prosek <lprosek@redhat.com>
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
 ---
- src/arch/i386/interface/pxe/pxe_undi.c |  6 +++++
- src/include/ipxe/netdevice.h           |  2 ++
- src/interface/efi/efi_snp.c            |  7 ++++++
- src/net/netdevice.c                    | 44 ++++++++++++++++++++++++++++++++++
+ src/arch/x86/interface/pxe/pxe_undi.c |  6 +++++
+ src/include/ipxe/netdevice.h          |  2 ++
+ src/interface/efi/efi_snp.c           |  7 ++++++
+ src/net/netdevice.c                   | 44 +++++++++++++++++++++++++++++++++++
  4 files changed, 59 insertions(+)
 
-diff --git a/src/arch/i386/interface/pxe/pxe_undi.c b/src/arch/i386/interface/pxe/pxe_undi.c
+diff --git a/src/arch/x86/interface/pxe/pxe_undi.c b/src/arch/x86/interface/pxe/pxe_undi.c
 index 2eb6817..2ea1451 100644
---- a/src/arch/i386/interface/pxe/pxe_undi.c
-+++ b/src/arch/i386/interface/pxe/pxe_undi.c
+--- a/src/arch/x86/interface/pxe/pxe_undi.c
++++ b/src/arch/x86/interface/pxe/pxe_undi.c
 @@ -976,6 +976,12 @@ static PXENV_EXIT_t pxenv_undi_isr ( struct s_PXENV_UNDI_ISR *undi_isr ) {
  		}
  		ll_hlen = ( len - iob_len ( iobuf ) );
@@ -66,10 +66,10 @@ index a1d207f..cea87f7 100644
  extern struct net_device_configurator *
  find_netdev_configurator ( const char *name );
 diff --git a/src/interface/efi/efi_snp.c b/src/interface/efi/efi_snp.c
-index 4508967..bf5e48e 100644
+index e6388bf..d1a1a44 100644
 --- a/src/interface/efi/efi_snp.c
 +++ b/src/interface/efi/efi_snp.c
-@@ -744,6 +744,13 @@ efi_snp_receive ( EFI_SIMPLE_NETWORK_PROTOCOL *snp,
+@@ -745,6 +745,13 @@ efi_snp_receive ( EFI_SIMPLE_NETWORK_PROTOCOL *snp,
  		goto out_bad_ll_header;
  	}
  
@@ -84,10 +84,10 @@ index 4508967..bf5e48e 100644
  	if ( ll_header_len )
  		*ll_header_len = ll_protocol->ll_header_len;
 diff --git a/src/net/netdevice.c b/src/net/netdevice.c
-index 7c40a2a..2d808b6 100644
+index 9df2119..c53d5e3 100644
 --- a/src/net/netdevice.c
 +++ b/src/net/netdevice.c
-@@ -1018,6 +1018,44 @@ int net_rx ( struct io_buffer *iobuf, struct net_device *netdev,
+@@ -1028,6 +1028,44 @@ int net_rx ( struct io_buffer *iobuf, struct net_device *netdev,
  }
  
  /**
@@ -132,7 +132,7 @@ index 7c40a2a..2d808b6 100644
   * Poll the network stack
   *
   * This polls all interfaces for received packets, and processes
-@@ -1068,6 +1106,12 @@ void net_poll ( void ) {
+@@ -1078,6 +1116,12 @@ void net_poll ( void ) {
  				continue;
  			}
  

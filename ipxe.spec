@@ -35,43 +35,27 @@
 #
 # And then change these two:
 
-%global date 20160127
-%global hash 6366fa7a
+%global date 20170123
+%global hash 4e85b27
 
 Name:    ipxe
 Version: %{date}
-Release: 5.git%{hash}%{?dist}
+Release: 1.git%{hash}%{?dist}
 Summary: A network boot loader
 
 Group:   System Environment/Base
 License: GPLv2 and BSD
 URL:     http://ipxe.org/
 
-Source0: %{name}-%{hash}.tar.bz2
+Source0: %{name}-%{date}-git%{hash}.tar.gz
 Source1: USAGE
 
-Patch2: 0002-Customize-ROM-banner-timeout.patch
-Patch3: 0003-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch
-Patch4: 0004-add-custom-Makefile-for-EfiRom-RHEL-only.patch
-Patch6: 0006-Use-spec-compliant-timeouts.patch
-# For bz#1350167 - ipxe: enable IPV6
-Patch7: ipxe-Enable-IPv6-protocol-in-non-QEMU-builds.patch
-# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
-Patch8: ipxe-Add-pci_find_next_capability.patch
-# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
-Patch9: ipxe-Add-virtio-1.0-constants-and-data-structures.patch
-# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
-Patch10: ipxe-Add-virtio-1.0-PCI-support.patch
-# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
-Patch11: ipxe-Add-virtio-net-1.0-support.patch
-# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
-Patch12: ipxe-Renumber-virtio_pci_region-flags.patch
-# For bz#1242850 - Ipxe can not recognize "network device" when enable virtio-1 of virtio-net-pci
-Patch13: ipxe-Fix-virtio-pci-logging.patch
-# For bz#1322056 - ipxe freeze during HTTP download with last RPM
-Patch14: ipxe-Send-TCP-keepalives-on-idle-established-connections.patch
-# For bz#1316329 - [RFE] Properly Handle 8021.Q VID 0 Frames, as new vlan model in linux kernel does.
-Patch15: ipxe-Strip-802.1Q-VLAN-0-priority-tags.patch
+Patch1: 0001-Add-redhat-directory.patch
+Patch2: 0002-import-EfiRom-from-edk2-BaseTools-RHEL-only.patch
+Patch3: 0003-add-custom-Makefile-for-EfiRom-RHEL-only.patch
+Patch4: 0005-Use-spec-compliant-timeouts.patch
+Patch5: 0008-Enable-IPv6-protocol-in-non-QEMU-builds.patch
+Patch6: 0009-Strip-802.1Q-VLAN-0-priority-tags.patch
 
 %ifarch %{buildarches}
 BuildRequires: perl
@@ -138,19 +122,12 @@ cp -a %{SOURCE1} .
 
 patch_command="patch -p1 -s"
 
+%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 %patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
 
 %build
 %ifarch %{buildarches}
@@ -247,6 +224,11 @@ done
 %endif
 
 %changelog
+* Fri Mar 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 20170123-1.git4e85b27.el7
+- Rebase to commit 4e85b27 [bz#1413781]
+- Resolves: bz#1413781
+  (Rebase ipxe for RHEL-7.4)
+
 * Thu Sep 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - 20160127-5.git6366fa7a.el7
 - ipxe-Strip-802.1Q-VLAN-0-priority-tags.patch [bz#1316329]
 - Resolves: bz#1316329

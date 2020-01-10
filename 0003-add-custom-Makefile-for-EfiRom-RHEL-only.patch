@@ -1,4 +1,4 @@
-From a20ead07b711057d778645392fdda048f83cd321 Mon Sep 17 00:00:00 2001
+From 0a3c58a092024de34fce41b5c99e3c0ab756ece9 Mon Sep 17 00:00:00 2001
 From: Laszlo Ersek <lersek@redhat.com>
 Date: Wed, 21 Oct 2015 11:08:59 +0200
 Subject: add custom Makefile for EfiRom (RHEL only)
@@ -15,6 +15,7 @@ The build flags have been captured from the BaseTools build log.
 
 Signed-off-by: Laszlo Ersek <lersek@redhat.com>
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+(cherry picked from commit a20ead07b711057d778645392fdda048f83cd321)
 ---
  EfiRom/Makefile | 43 +++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 43 insertions(+)
@@ -70,5 +71,5 @@ index 0000000..30914d9
 +	rm -f EfiRom EfiRom.o CommonLib.o EfiUtilityMsgs.o ParseInf.o \
 + EfiCompress.o
 -- 
-2.5.0
+1.8.3.1
 

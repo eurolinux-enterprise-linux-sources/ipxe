@@ -1,4 +1,4 @@
-From 7038f41c0131d263de5165b416500009acdbf550 Mon Sep 17 00:00:00 2001
+From bc252caa54fcfb2e9fd0ddb01ebaa50192e85c38 Mon Sep 17 00:00:00 2001
 From: Alex Williamson <alex.williamson@redhat.com>
 Date: Wed, 21 Oct 2015 11:18:40 +0200
 Subject: Use spec compliant timeouts
@@ -17,6 +17,7 @@ of RHEL6 gPXE DHCP timeouts after bz968474 + bz1206042
 
 Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+(cherry picked from commit 7038f41c0131d263de5165b416500009acdbf550)
 ---
  src/config/local/.gitignore |  1 -
  src/config/local/dhcp.h     | 62 +++++++++++++++++++++++++++++++++++++++++++++
@@ -93,5 +94,5 @@ index 0000000..83df5b8
 +#undef PXEBS_MAX_TIMEOUT_SEC
 +#define PXEBS_MAX_TIMEOUT_SEC               5
 -- 
-2.5.0
+1.8.3.1
 
