@@ -1,0 +1,47 @@
+From e53b49d7d8d1b17b1326e37e6e3674e0ceae0cf9 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 4 Mar 2014 15:42:30 +0100
+Subject: [PATCH 7/7] Customize ROM banner timeout
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20140304154230.6292.69267.stgit@bling.home>
+Patchwork-id: 58011
+O-Subject: [RHEL7 ipxe PATCH v2 3/3] [rhel7] Customize ROM banner timeout
+Bugzilla: 857123
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Vlad Yasevich <vyasevic@redhat.com>
+RH-Acked-by: Richard Jones <rjones@redhat.com>
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+
+Bugzilla: 857123
+Upstream: N/A (downstream customization)
+
+Users want some opportunity to interact with the iPXE shell, but
+tools like libguestfs want to boot as quickly as possible.  Create
+a compromise by disabling the interactive banner prompt during ROM
+initialization, but retaining it when we actually attempt to boot
+from the device.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+ src/config/local/general.h |    2 ++
+ 1 file changed, 2 insertions(+)
+ create mode 100644 src/config/local/general.h
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/config/local/general.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+ create mode 100644 src/config/local/general.h
+
+diff --git a/src/config/local/general.h b/src/config/local/general.h
+new file mode 100644
+index 0000000..349d435
+--- /dev/null
++++ b/src/config/local/general.h
+@@ -0,0 +1,2 @@
++#undef ROM_BANNER_TIMEOUT
++#define ROM_BANNER_TIMEOUT	0
+-- 
+1.7.1
+

@@ -1,0 +1,149 @@
+From 13a929c026fe7346be3c9342f10169eab6958015 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 3 Mar 2014 18:46:57 +0100
+Subject: [PATCH 1/7] Enable infrastructure to specify an autoboot device location
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20140303184657.19235.97871.stgit@bling.home>
+Patchwork-id: 57976
+O-Subject: [RHEL7 ipxe PATCH 1/4] [autoboot] Enable infrastructure to specify an autoboot device location
+Bugzilla: 1031518
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Vlad Yasevich <vyasevic@redhat.com>
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+
+Bugzilla: 1031518
+Upstream: 123bae9d939235a62e67d0cbfc66f3277bd81844
+
+iPXE will currently attempt to boot from every network device for
+which it has a driver.  Where a system has more than one network
+device supported by iPXE, this renders BIOS IPL lists ineffective.
+
+Allow an autoboot device location to be specified.  If such a location
+is specified, then only devices matching that location will be used as
+part of the automatic boot sequence.  If no such location is
+specified, then all devices will be used.
+
+Note that this does not affect the "autoboot" command, which will
+continue to use all devices.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Modified-by: Michael Brown <mcb30@ipxe.org>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+---
+ src/include/usr/autoboot.h |    4 +++-
+ src/usr/autoboot.c         |   43 ++++++++++++++++++++++++++-----------------
+ 2 files changed, 29 insertions(+), 18 deletions(-)
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/include/usr/autoboot.h |    4 +++-
+ src/usr/autoboot.c         |   43 ++++++++++++++++++++++++++-----------------
+ 2 files changed, 29 insertions(+), 18 deletions(-)
+
+diff --git a/src/include/usr/autoboot.h b/src/include/usr/autoboot.h
+index cfa4c41..f562b2b 100644
+--- a/src/include/usr/autoboot.h
++++ b/src/include/usr/autoboot.h
+@@ -10,6 +10,7 @@
+ FILE_LICENCE ( GPL2_OR_LATER );
+ 
+ #include <ipxe/in.h>
++#include <ipxe/device.h>
+ struct net_device;
+ struct uri;
+ struct settings;
+@@ -25,12 +26,13 @@ enum uriboot_flags {
+ 			 URIBOOT_NO_SAN_BOOT |	   \
+ 			 URIBOOT_NO_SAN_UNHOOK )
+ 
++extern struct device_description autoboot_device;
++
+ extern int uriboot ( struct uri *filename, struct uri *root_path, int drive,
+ 		     unsigned int flags );
+ extern struct uri *
+ fetch_next_server_and_filename ( struct settings *settings );
+ extern int netboot ( struct net_device *netdev );
+-extern int autoboot ( void );
+ extern void ipxe ( struct net_device *netdev );
+ 
+ extern int pxe_menu_boot ( struct net_device *netdev );
+diff --git a/src/usr/autoboot.c b/src/usr/autoboot.c
+index 70f883a..07157cf 100644
+--- a/src/usr/autoboot.c
++++ b/src/usr/autoboot.c
+@@ -49,6 +49,9 @@ FILE_LICENCE ( GPL2_OR_LATER );
+  *
+  */
+ 
++/** Device location of preferred autoboot device */
++struct device_description autoboot_device;
++
+ /* Disambiguate the various error causes */
+ #define ENOENT_BOOT __einfo_error ( EINFO_ENOENT_BOOT )
+ #define EINFO_ENOENT_BOOT \
+@@ -74,15 +77,6 @@ __weak int pxe_menu_boot ( struct net_device *netdev __unused ) {
+ }
+ 
+ /**
+- * Identify the boot network device
+- *
+- * @ret netdev		Boot network device
+- */
+-static struct net_device * find_boot_netdev ( void ) {
+-	return NULL;
+-}
+-
+-/**
+  * Parse next-server and filename into a URI
+  *
+  * @v next_server	Next-server address
+@@ -432,21 +426,36 @@ int netboot ( struct net_device *netdev ) {
+ }
+ 
+ /**
++ * Test if network device matches the autoboot device location
++ *
++ * @v netdev		Network device
++ * @ret is_autoboot	Network device matches the autoboot device location
++ */
++static int is_autoboot_device ( struct net_device *netdev ) {
++
++	return ( ( netdev->dev->desc.bus_type == autoboot_device.bus_type ) &&
++		 ( netdev->dev->desc.location == autoboot_device.location ) );
++}
++
++/**
+  * Boot the system
+  */
+-int autoboot ( void ) {
+-	struct net_device *boot_netdev;
++static int autoboot ( void ) {
+ 	struct net_device *netdev;
+ 	int rc = -ENODEV;
+ 
+-	/* If we have an identifable boot device, try that first */
+-	if ( ( boot_netdev = find_boot_netdev() ) )
+-		rc = netboot ( boot_netdev );
+-
+-	/* If that fails, try booting from any of the other devices */
++	/* Try booting from each network device.  If we have a
++	 * specified autoboot device location, then use only devices
++	 * matching that location.
++	 */
+ 	for_each_netdev ( netdev ) {
+-		if ( netdev == boot_netdev )
++
++		/* Skip any non-matching devices, if applicable */
++		if ( autoboot_device.bus_type &&
++		     ( ! is_autoboot_device ( netdev ) ) )
+ 			continue;
++
++		/* Attempt booting from this device */
+ 		rc = netboot ( netdev );
+ 	}
+ 
+-- 
+1.7.1
+

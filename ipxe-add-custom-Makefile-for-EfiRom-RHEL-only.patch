@@ -1,0 +1,79 @@
+From 02dbc54913d8274ecb24239ed016e5b8eedf41cd Mon Sep 17 00:00:00 2001
+From: Laszlo Ersek <lersek@redhat.com>
+Date: Tue, 9 Sep 2014 20:50:23 +0200
+Subject: [PATCH 2/4] add custom Makefile for EfiRom (RHEL only)
+
+Message-id: <1410295825-13989-3-git-send-email-lersek@redhat.com>
+Patchwork-id: 60928
+O-Subject: [RHEL-7.1 ipxe PATCH 2/4] add custom Makefile for EfiRom (RHEL only)
+Bugzilla: 1084561
+RH-Acked-by: Miroslav Rezanina <mrezanin@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+The build flags have been captured from the BaseTools build log.
+
+Signed-off-by: Laszlo Ersek <lersek@redhat.com>
+---
+ EfiRom/Makefile | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+ create mode 100644 EfiRom/Makefile
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ EfiRom/Makefile |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 43 insertions(+), 0 deletions(-)
+ create mode 100644 EfiRom/Makefile
+
+diff --git a/EfiRom/Makefile b/EfiRom/Makefile
+new file mode 100644
+index 0000000..30914d9
+--- /dev/null
++++ b/EfiRom/Makefile
+@@ -0,0 +1,43 @@
++.POSIX:
++
++CFLAGS = -fshort-wchar -fno-strict-aliasing -I Common -I Include -I Include/X64
++LDFLAGS = -s
++
++EfiRom: EfiRom.o CommonLib.o EfiUtilityMsgs.o ParseInf.o EfiCompress.o
++	$(CC) -o EfiRom $(LDFLAGS) EfiRom.o CommonLib.o EfiUtilityMsgs.o \
++ ParseInf.o EfiCompress.o
++
++EfiRom.o: EfiRom.c Common/EfiUtilityMsgs.h Include/Common/UefiBaseTypes.h \
++ Include/Common/BaseTypes.h Include/X64/ProcessorBind.h Common/ParseInf.h \
++ Common/MemoryFile.h EfiRom.h Include/IndustryStandard/PeImage.h \
++ Include/IndustryStandard/pci22.h Include/IndustryStandard/pci23.h \
++ Include/IndustryStandard/pci30.h Include/IndustryStandard/EfiPci.h \
++ Include/IndustryStandard/pci30.h Common/Compress.h Common/CommonLib.h \
++ Include/Common/BuildVersion.h Common/CommonLib.h
++	$(CC) $(CFLAGS) -c EfiRom.c
++
++CommonLib.o: Common/CommonLib.c Common/CommonLib.h \
++ Include/Common/UefiBaseTypes.h Include/Common/BaseTypes.h \
++ Include/X64/ProcessorBind.h Include/Common/BuildVersion.h \
++ Common/EfiUtilityMsgs.h
++	$(CC) $(CFLAGS) -c Common/CommonLib.c
++
++EfiUtilityMsgs.o: Common/EfiUtilityMsgs.c Common/EfiUtilityMsgs.h \
++ Include/Common/UefiBaseTypes.h Include/Common/BaseTypes.h \
++ Include/X64/ProcessorBind.h
++	$(CC) $(CFLAGS) -c Common/EfiUtilityMsgs.c
++
++ParseInf.o: Common/ParseInf.c Common/EfiUtilityMsgs.h \
++ Include/Common/UefiBaseTypes.h Include/Common/BaseTypes.h \
++ Include/X64/ProcessorBind.h Common/ParseInf.h Common/MemoryFile.h \
++ Common/CommonLib.h Include/Common/BuildVersion.h
++	$(CC) $(CFLAGS) -c Common/ParseInf.c
++
++EfiCompress.o: Common/EfiCompress.c Common/Compress.h Common/CommonLib.h \
++ Include/Common/UefiBaseTypes.h Include/Common/BaseTypes.h \
++ Include/X64/ProcessorBind.h Include/Common/BuildVersion.h
++	$(CC) $(CFLAGS) -c Common/EfiCompress.c
++
++clean:
++	rm -f EfiRom EfiRom.o CommonLib.o EfiUtilityMsgs.o ParseInf.o \
++ EfiCompress.o
+-- 
+1.7.1
+

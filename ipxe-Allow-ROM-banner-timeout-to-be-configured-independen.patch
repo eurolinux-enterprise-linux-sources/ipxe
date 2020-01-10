@@ -1,0 +1,105 @@
+From 941332209d767a090b8003047fbb798bf8f193d4 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 4 Mar 2014 15:42:24 +0100
+Subject: [PATCH 6/7] Allow ROM banner timeout to be configured independently
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20140304154224.6292.81292.stgit@bling.home>
+Patchwork-id: 58010
+O-Subject: [RHEL7 ipxe PATCH v2 2/3] [romprefix] Allow ROM banner timeout to be configured independently
+Bugzilla: 857123
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Vlad Yasevich <vyasevic@redhat.com>
+RH-Acked-by: Richard Jones <rjones@redhat.com>
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+
+Bugzilla: 857123
+Upstream: 27d1b40ee961d0910576a094a71dea1211254776
+
+iPXE currently prints a "Press Ctrl-B" banner twice: once when the ROM
+is first called for initialisation and again if we attempt to boot
+from the ROM.  This slows boot, especially when the NIC is not the
+primary boot device.  Tools such as libguestfs make use of QEMU VMs
+for performing maintenance on disk images and may make use of NICs in
+the VM for network support.  If iPXE introduces a static init-time
+delay, that directly translates to increased runtime for the tools.
+
+Fix by allowing the ROM banner timeout to be configured independently
+of the main banner timeout.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Modified-by: Michael Brown <mcb30@ipxe.org>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+---
+ src/arch/i386/prefix/romprefix.S |   10 +++-------
+ src/config/general.h             |   19 +++++++++++++++----
+ 2 files changed, 18 insertions(+), 11 deletions(-)
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/arch/i386/prefix/romprefix.S |   10 +++-------
+ src/config/general.h             |   17 ++++++++++++++---
+ 2 files changed, 17 insertions(+), 10 deletions(-)
+
+diff --git a/src/arch/i386/prefix/romprefix.S b/src/arch/i386/prefix/romprefix.S
+index c75b9b9..d606006 100644
+--- a/src/arch/i386/prefix/romprefix.S
++++ b/src/arch/i386/prefix/romprefix.S
+@@ -25,12 +25,8 @@ FILE_LICENCE ( GPL2_OR_LATER )
+ 	( PMM_HANDLE_BASE | 0x00002000 )
+ #define PCI_FUNC_MASK 0x07
+ 
+-/* ROM banner timeout.  Based on the configurable BANNER_TIMEOUT in
+- * config.h, but converted to a number of (18Hz) timer ticks, and
+- * doubled to allow for BIOSes that switch video modes immediately
+- * beforehand, so rendering the message almost invisible to the user.
+- */
+-#define ROM_BANNER_TIMEOUT ( 2 * ( 18 * BANNER_TIMEOUT ) / 10 )
++/* ROM banner timeout, converted to a number of (18Hz) timer ticks. */
++#define ROM_BANNER_TIMEOUT_TICKS ( ( 18 * ROM_BANNER_TIMEOUT ) / 10 )
+ 
+ /* Allow payload to be excluded from ROM size
+  */
+@@ -801,7 +797,7 @@ wait_for_key:
+ 	int	$0x16
+ 	jmp	1b
+ 2:	/* Wait for a key press */
+-	movw	$ROM_BANNER_TIMEOUT, %cx
++	movw	$ROM_BANNER_TIMEOUT_TICKS, %cx
+ 3:	decw	%cx
+ 	js	99f		/* Exit with ZF clear */
+ 	/* Wait for timer tick to be updated */
+diff --git a/src/config/general.h b/src/config/general.h
+index 9f0bb52..c5c8ea7 100644
+--- a/src/config/general.h
++++ b/src/config/general.h
+@@ -28,11 +28,22 @@ FILE_LICENCE ( GPL2_OR_LATER );
+ #define PRODUCT_SHORT_NAME "iPXE"
+ 
+ /*
+- * Timer configuration
+- *
++ * Banner timeout configuration
++ *
++ * This controls the timeout for the "Press Ctrl-B for the iPXE
++ * command line" banner displayed when iPXE starts up.  The value is
++ * specified in tenths of a second for which the banner should appear.
++ * A value of 0 disables the banner.
++ *
++ * ROM_BANNER_TIMEOUT controls the "Press Ctrl-B to configure iPXE"
++ * banner displayed only by ROM builds of iPXE during POST.  This
++ * defaults to being twice the length of BANNER_TIMEOUT, to allow for
++ * BIOSes that switch video modes immediately before calling the
++ * initialisation vector, thus rendering the banner almost invisible
++ * to the user.
+  */
+-#define BANNER_TIMEOUT	20	/* Tenths of a second for which the shell
+-				   banner should appear */
++#define BANNER_TIMEOUT		20
++#define ROM_BANNER_TIMEOUT	( 2 * BANNER_TIMEOUT )
+ 
+ /*
+  * Network protocols
+-- 
+1.7.1
+

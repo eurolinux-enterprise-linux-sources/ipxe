@@ -1,0 +1,101 @@
+From b83eff7520225d393dec4d656bc9cab915495a5c Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 7 Feb 2014 17:21:17 +0100
+Subject: [PATCH] Use next-server from filename's settings block
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20140207172042.26907.16755.stgit@bling.home>
+Patchwork-id: 57133
+O-Subject: [RHEL7 ipxe PATCH] [autoboot] Use next-server from filename's settings block
+Bugzilla: 1062644
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+RH-Acked-by: Miroslav Rezanina <mrezanin@redhat.com>
+
+From: Michael Brown <mcb30@ipxe.org>
+
+Bugzilla: 1062644
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=7015017
+Upstream: 936134ed460618e18cc05d677a442d43d5e739a1
+
+Locate the settings block containing the filename, and search only
+that settings block for the next-server address.  This avoids problems
+caused by misconfigured DHCP servers which provide a next-server
+address (often defaulting to the DHCP server's own IP address) even
+when not providing a filename.
+
+Originally-implemented-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+---
+ src/usr/autoboot.c |   39 +++++++++++++++++++++++++--------------
+ 1 file changed, 25 insertions(+), 14 deletions(-)
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/usr/autoboot.c |   39 +++++++++++++++++++++++++--------------
+ 1 files changed, 25 insertions(+), 14 deletions(-)
+
+diff --git a/src/usr/autoboot.c b/src/usr/autoboot.c
+index b2d288e..70f883a 100644
+--- a/src/usr/autoboot.c
++++ b/src/usr/autoboot.c
+@@ -251,31 +251,42 @@ static void close_all_netdevs ( void ) {
+  * @ret uri		URI, or NULL on failure
+  */
+ struct uri * fetch_next_server_and_filename ( struct settings *settings ) {
+-	struct in_addr next_server;
+-	char buf[256];
++	struct in_addr next_server = { 0 };
++	char *raw_filename = NULL;
++	struct uri *uri = NULL;
+ 	char *filename;
+-	struct uri *uri;
+ 
+-	/* Fetch next-server setting */
+-	fetch_ipv4_setting ( settings, &next_server_setting, &next_server );
+-	if ( next_server.s_addr )
+-		printf ( "Next server: %s\n", inet_ntoa ( next_server ) );
++	/* Determine settings block containing the filename, if any */
++	settings = fetch_setting_origin ( settings, &filename_setting );
+ 
+-	/* Fetch filename setting */
+-	fetch_string_setting ( settings, &filename_setting,
+-			       buf, sizeof ( buf ) );
+-	if ( buf[0] )
+-		printf ( "Filename: %s\n", buf );
++	/* If we have a filename, fetch it along with next-server */
++	if ( settings ) {
++		fetch_ipv4_setting ( settings, &next_server_setting,
++				     &next_server );
++		if ( fetch_string_setting_copy ( settings, &filename_setting,
++						 &raw_filename ) < 0 )
++			goto err_fetch;
++	}
+ 
+ 	/* Expand filename setting */
+-	filename = expand_settings ( buf );
++	filename = expand_settings ( raw_filename ? raw_filename : "" );
+ 	if ( ! filename )
+-		return NULL;
++		goto err_expand;
+ 
+ 	/* Parse next server and filename */
++	if ( next_server.s_addr )
++		printf ( "Next server: %s\n", inet_ntoa ( next_server ) );
++	if ( filename[0] )
++		printf ( "Filename: %s\n", filename );
+ 	uri = parse_next_server_and_filename ( next_server, filename );
++	if ( ! uri )
++		goto err_parse;
+ 
++ err_parse:
+ 	free ( filename );
++ err_expand:
++	free ( raw_filename );
++ err_fetch:
+ 	return uri;
+ }
+ 
+-- 
+1.7.1
+

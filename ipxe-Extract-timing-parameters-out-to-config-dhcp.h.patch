@@ -1,0 +1,262 @@
+From 82f54ed91ab0dbf9b2fdab7b3ea80b7b9f02ae13 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 28 Apr 2015 21:23:57 +0200
+Subject: [PATCH 1/2] Extract timing parameters out to config/dhcp.h
+
+Message-id: <20150428212357.31299.65270.stgit@gimli.home>
+Patchwork-id: 64950
+O-Subject: [RHEL7.2 ipxe PATCH 1/2] [dhcp] Extract timing parameters out to config/dhcp.h
+Bugzilla: 1196352
+RH-Acked-by: Miroslav Rezanina <mrezanin@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+
+iPXE uses DHCP timeouts loosely based on values recommended by the
+specification, but often abbreviated to reduce timeouts for reliable
+and/or simple network topologies.  Extract the DHCP timing parameters
+to config/dhcp.h and document them.  The resulting default iPXE
+behavior is exactly the same, but downstreams are now afforded the
+opportunity to implement spec-compliant behavior via config file
+overrides.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Modified-by: Michael Brown <mcb30@ipxe.org>
+Signed-off-by: Michael Brown <mcb30@ipxe.org>
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ src/config/dhcp.h       | 87 +++++++++++++++++++++++++++++++++++++++++++++++++
+ src/include/ipxe/dhcp.h | 10 ------
+ src/net/udp/dhcp.c      | 32 ++++++++++--------
+ 3 files changed, 106 insertions(+), 23 deletions(-)
+ create mode 100644 src/config/dhcp.h
+
+diff --git a/src/config/dhcp.h b/src/config/dhcp.h
+new file mode 100644
+index 0000000..21e863b
+--- /dev/null
++++ b/src/config/dhcp.h
+@@ -0,0 +1,87 @@
++#ifndef CONFIG_DHCP_H
++#define CONFIG_DHCP_H
++
++/** @file
++ *
++ * DHCP configuration
++ *
++ */
++
++FILE_LICENCE ( GPL2_OR_LATER );
++
++#include <config/defaults.h>
++
++/*
++ * DHCP and PXE Boot Server timeout parameters
++ *
++ * Initial and final timeout for DHCP discovery
++ *
++ * The PXE spec indicates discover request are sent 4 times, with
++ * timeouts of 4, 8, 16, 32 seconds.  iPXE by default uses 1, 2, 4, 8.
++ */
++#define DHCP_DISC_START_TIMEOUT_SEC	1
++#define DHCP_DISC_END_TIMEOUT_SEC	10
++//#define DHCP_DISC_START_TIMEOUT_SEC	4	/* as per PXE spec */
++//#define DHCP_DISC_END_TIMEOUT_SEC	32	/* as per PXE spec */
++
++/*
++ * ProxyDHCP offers are given precedence by continue to wait for them
++ * after a valid DHCPOFFER is received.  We'll wait through this
++ * timeout for it.  The PXE spec indicates waiting through the 4 & 8
++ * second timeouts, iPXE by default stops after 2.
++ */
++#define DHCP_DISC_PROXY_TIMEOUT_SEC	2
++//#define DHCP_DISC_PROXY_TIMEOUT_SEC	11	/* as per PXE spec */
++
++/*
++ * Per the PXE spec, requests are also tried 4 times, but at timeout
++ * intervals of 1, 2, 3, 4 seconds.  To adapt this to an exponential
++ * backoff timer, we can either do 1, 2, 4, 8, ie. 4 retires with a
++ * longer interval or start at 0 (0.25s) for 0.25, 0.5, 1, 2, 4,
++ * ie. one extra try and shorter initial timeouts.  iPXE by default
++ * does a combination of both, starting at 0 and going through the 8
++ * second timeout.
++ */
++#define DHCP_REQ_START_TIMEOUT_SEC	0
++#define DHCP_REQ_END_TIMEOUT_SEC	10
++//#define DHCP_REQ_END_TIMEOUT_SEC	4	/* as per PXE spec */
++
++/*
++ * A ProxyDHCP offer without PXE options also goes through a request
++ * phase using these same parameters, but note the early break below.
++ */
++#define DHCP_PROXY_START_TIMEOUT_SEC	0
++#define DHCP_PROXY_END_TIMEOUT_SEC	10
++//#define DHCP_PROXY_END_TIMEOUT_SEC	8	/* as per PXE spec */
++
++/*
++ * A ProxyDHCP request timeout should not induce a failure condition,
++ * so we always want to break before the above set of timers expire.
++ * The iPXE default value of 2 breaks at the first timeout after 2
++ * seconds, which will be after the 2 second timeout.
++ */
++#define DHCP_REQ_PROXY_TIMEOUT_SEC	2
++//#define DHCP_REQ_PROXY_TIMEOUT_SEC	7	/* as per PXE spec */
++
++/*
++ * Per the PXE spec, a PXE boot server request is also be retried 4
++ * times at timeouts of 1, 2, 3, 4.  iPXE uses the same timeouts as
++ * discovery, 1, 2, 4, 8, but will move on to the next server if
++ * available after an elapsed time greater than 3 seconds, therefore
++ * effectively only sending 3 tries at timeouts of 1, 2, 4.
++ */
++#define PXEBS_START_TIMEOUT_SEC		1
++#define PXEBS_END_TIMEOUT_SEC		10
++//#define PXEBS_START_TIMEOUT_SEC	0	/* as per PXE spec */
++//#define PXEBS_END_TIMEOUT_SEC		8	/* as per PXE spec */
++
++/*
++ * Increment to the next PXE Boot server, if available, after this
++ * this much time has elapsed.
++ */
++#define PXEBS_MAX_TIMEOUT_SEC		3
++//#define PXEBS_MAX_TIMEOUT_SEC		7	/* as per PXE spec */
++
++#include <config/local/dhcp.h>
++
++#endif /* CONFIG_DHCP_H */
+diff --git a/src/include/ipxe/dhcp.h b/src/include/ipxe/dhcp.h
+index b97dfe3..13c8ca4 100644
+--- a/src/include/ipxe/dhcp.h
++++ b/src/include/ipxe/dhcp.h
+@@ -631,16 +631,6 @@ struct dhcphdr {
+  */
+ #define DHCP_MIN_LEN 552
+ 
+-/** Timeouts for sending DHCP packets */
+-#define DHCP_MIN_TIMEOUT ( 1 * TICKS_PER_SEC )
+-#define DHCP_MAX_TIMEOUT ( 10 * TICKS_PER_SEC )
+-
+-/** Maximum time that we will wait for ProxyDHCP responses */
+-#define PROXYDHCP_MAX_TIMEOUT ( 2 * TICKS_PER_SEC )
+-
+-/** Maximum time that we will wait for Boot Server responses */
+-#define PXEBS_MAX_TIMEOUT ( 3 * TICKS_PER_SEC )
+-
+ /** Settings block name used for DHCP responses */
+ #define DHCP_SETTINGS_NAME "dhcp"
+ 
+diff --git a/src/net/udp/dhcp.c b/src/net/udp/dhcp.c
+index 762ae73..6c4f29e 100644
+--- a/src/net/udp/dhcp.c
++++ b/src/net/udp/dhcp.c
+@@ -44,6 +44,7 @@ FILE_LICENCE ( GPL2_OR_LATER );
+ #include <ipxe/dhcppkt.h>
+ #include <ipxe/dhcp_arch.h>
+ #include <ipxe/features.h>
++#include <config/dhcp.h>
+ 
+ /** @file
+  *
+@@ -185,8 +186,9 @@ struct dhcp_session_state {
+ 	void ( * expired ) ( struct dhcp_session *dhcp );
+ 	/** Transmitted message type */
+ 	uint8_t tx_msgtype;
+-	/** Apply minimum timeout */
+-	uint8_t apply_min_timeout;
++	/** Timeout parameters */
++	uint8_t min_timeout_sec;
++	uint8_t max_timeout_sec;
+ };
+ 
+ static struct dhcp_session_state dhcp_state_discover;
+@@ -286,9 +288,8 @@ static void dhcp_set_state ( struct dhcp_session *dhcp,
+ 	dhcp->state = state;
+ 	dhcp->start = currticks();
+ 	stop_timer ( &dhcp->timer );
+-	dhcp->timer.min_timeout =
+-		( state->apply_min_timeout ? DHCP_MIN_TIMEOUT : 0 );
+-	dhcp->timer.max_timeout = DHCP_MAX_TIMEOUT;
++	dhcp->timer.min_timeout = state->min_timeout_sec * TICKS_PER_SEC;
++	dhcp->timer.max_timeout = state->max_timeout_sec * TICKS_PER_SEC;
+ 	start_timer_nodelay ( &dhcp->timer );
+ }
+ 
+@@ -429,7 +430,7 @@ static void dhcp_discovery_rx ( struct dhcp_session *dhcp,
+ 	/* If we can't yet transition to DHCPREQUEST, do nothing */
+ 	elapsed = ( currticks() - dhcp->start );
+ 	if ( ! ( dhcp->no_pxedhcp || dhcp->proxy_offer ||
+-		 ( elapsed > PROXYDHCP_MAX_TIMEOUT ) ) )
++		 ( elapsed > DHCP_DISC_PROXY_TIMEOUT_SEC * TICKS_PER_SEC ) ) )
+ 		return;
+ 
+ 	/* Transition to DHCPREQUEST */
+@@ -445,7 +446,8 @@ static void dhcp_discovery_expired ( struct dhcp_session *dhcp ) {
+ 	unsigned long elapsed = ( currticks() - dhcp->start );
+ 
+ 	/* Give up waiting for ProxyDHCP before we reach the failure point */
+-	if ( dhcp->offer.s_addr && ( elapsed > PROXYDHCP_MAX_TIMEOUT ) ) {
++	if ( dhcp->offer.s_addr &&
++	     ( elapsed > DHCP_DISC_PROXY_TIMEOUT_SEC * TICKS_PER_SEC ) ) {
+ 		dhcp_set_state ( dhcp, &dhcp_state_request );
+ 		return;
+ 	}
+@@ -461,7 +463,8 @@ static struct dhcp_session_state dhcp_state_discover = {
+ 	.rx			= dhcp_discovery_rx,
+ 	.expired		= dhcp_discovery_expired,
+ 	.tx_msgtype		= DHCPDISCOVER,
+-	.apply_min_timeout	= 1,
++	.min_timeout_sec	= DHCP_DISC_START_TIMEOUT_SEC,
++	.max_timeout_sec	= DHCP_DISC_END_TIMEOUT_SEC,
+ };
+ 
+ /**
+@@ -598,7 +601,8 @@ static struct dhcp_session_state dhcp_state_request = {
+ 	.rx			= dhcp_request_rx,
+ 	.expired		= dhcp_request_expired,
+ 	.tx_msgtype		= DHCPREQUEST,
+-	.apply_min_timeout	= 0,
++	.min_timeout_sec	= DHCP_REQ_START_TIMEOUT_SEC,
++	.max_timeout_sec	= DHCP_REQ_END_TIMEOUT_SEC,
+ };
+ 
+ /**
+@@ -683,7 +687,7 @@ static void dhcp_proxy_expired ( struct dhcp_session *dhcp ) {
+ 	unsigned long elapsed = ( currticks() - dhcp->start );
+ 
+ 	/* Give up waiting for ProxyDHCP before we reach the failure point */
+-	if ( elapsed > PROXYDHCP_MAX_TIMEOUT ) {
++	if ( elapsed > DHCP_REQ_PROXY_TIMEOUT_SEC * TICKS_PER_SEC ) {
+ 		dhcp_finished ( dhcp, 0 );
+ 		return;
+ 	}
+@@ -699,7 +703,8 @@ static struct dhcp_session_state dhcp_state_proxy = {
+ 	.rx			= dhcp_proxy_rx,
+ 	.expired		= dhcp_proxy_expired,
+ 	.tx_msgtype		= DHCPREQUEST,
+-	.apply_min_timeout	= 0,
++	.min_timeout_sec	= DHCP_PROXY_START_TIMEOUT_SEC,
++	.max_timeout_sec	= DHCP_PROXY_END_TIMEOUT_SEC,
+ };
+ 
+ /**
+@@ -824,7 +829,7 @@ static void dhcp_pxebs_expired ( struct dhcp_session *dhcp ) {
+ 	/* Give up waiting before we reach the failure point, and fail
+ 	 * over to the next server in the attempt list
+ 	 */
+-	if ( elapsed > PXEBS_MAX_TIMEOUT ) {
++	if ( elapsed > PXEBS_MAX_TIMEOUT_SEC * TICKS_PER_SEC ) {
+ 		dhcp->pxe_attempt++;
+ 		if ( dhcp->pxe_attempt->s_addr ) {
+ 			dhcp_set_state ( dhcp, &dhcp_state_pxebs );
+@@ -846,7 +851,8 @@ static struct dhcp_session_state dhcp_state_pxebs = {
+ 	.rx			= dhcp_pxebs_rx,
+ 	.expired		= dhcp_pxebs_expired,
+ 	.tx_msgtype		= DHCPREQUEST,
+-	.apply_min_timeout	= 1,
++	.min_timeout_sec	= PXEBS_START_TIMEOUT_SEC,
++	.max_timeout_sec	= PXEBS_END_TIMEOUT_SEC,
+ };
+ 
+ /****************************************************************************
+-- 
+1.8.3.1
+
